@@ -1,0 +1,493 @@
+//Cellular Automata model part code
+//you just need to focus on the 1.Growth model 2.Eden model and 3.random walk model
+#include <iostream>
+#include <ctime>
+#include <cstdlib>
+#include<fstream>
+#include <cmath>
+using namespace std;
+
+double T,hum;
+
+double constM1=0.0;
+double constM2=0.0;
+double constM3=0.0;
+
+const double M0=1000.0;
+const double S0=1000.0;
+const double p0=1.0;
+	double r1=10.0;
+	double r2=10.0;
+	double r3=10;
+	double r0=10.0;
+
+double sump1=0.0;
+double sump2=0.0; 
+double sump3=0.0;
+
+double sumM;
+int N1=0;
+int N2=0;
+int N3=0;
+
+class cell1//1-celled fungus
+{
+	public:
+		int flag;//1 means yes, 0 means No 		
+		double p;//population density
+		double dp;//The change rate of population density
+		double dm;//Erosion rate	
+		double K;//Environmental capacity
+		
+		cell1():flag(0),p(0.0),dp(0.0),dm(0.0),K(0.0)
+		{
+		}
+		
+		void init()
+		{
+			flag=1;
+			p=p0;
+			K=(S0-p);
+			dp=r1/r0*p*(1.0-p/K);
+			dm=r1/r0*p/100.0;
+		}
+	
+}; 
+class cell2//2-celled fungi 
+{
+	public: 
+		int flag;	
+		double p;
+		double dp;
+		double dm;	
+		double K;
+		
+		cell2():flag(0),p(0.0),dp(0.0),dm(0.0),K(0.0)
+		{
+		}
+		
+		void init()
+		{
+			flag=1;
+			p=p0;
+			K=(S0-p);
+			dp=r2/r0*p*(1.0-p/K);
+			dm=r2/r0*p/100.0;
+		}
+};
+
+class cell3
+{
+	public:
+		int flag;		
+		double p;
+		double dp;
+		double dm;	
+		double K;
+		
+		cell3():flag(0),p(0.0),dp(0.0),dm(0.0),K(0.0)
+		{
+		}
+		
+		void init()
+		{
+			flag=1;
+			p=p0;
+			K=S0;
+			dp=r3/r0*p*(1.0-p/K);
+			dm=r3/r0*p/100.0;
+		}
+};
+
+class landblock//Represents a parcel 
+{
+	public:
+		double m;//Denotes organic quality
+		double n;//Another organic quality
+		cell1 *x1;
+		cell2 *x2;
+		cell3 *x3;
+		
+		landblock():m(M0),n(M0)
+		{
+			x1=new cell1;
+			x2=new cell2;
+			x3=new cell3;
+		}
+		
+		landblock(int x):m(M0),n(M0)
+		{
+			x1=new cell1;
+			x1->flag=-1;
+			x2=new cell2;
+			x2->flag=-1;
+			x3=new cell3;
+			x3->flag=-1;
+		}
+		
+		//1.Growth model based on differential equation
+		void grow()
+		{
+			int flag1=1;
+			int flag2=1;
+			int flag3=1;
+			
+			//For every cell,here we just show the Symbiotic relationship
+			if(x1->flag==1)
+			{
+				x1->p=x1->p+x1->dp;
+				if(x1->p<=1e-1||m<=50)
+				{
+					flag1=0;
+					x1->p=x1->p-x1->dp;
+					//After deleting the box, update the sump
+					sump1=sump1-x1->p;
+					N1--;
+					delete x1;
+					x1=new cell1;
+					cout<<"yes"<<endl;
+					
+				}
+				else
+				{
+					sump1=sump1+x1->dp;
+					m=m-x1->dm;
+					n=n+x1->dm/3;
+					constM1+=x1->dm;
+				}
+				
+			}
+			if(x2->flag==1)
+			{
+				x2->p=x2->p+x2->dp;
+				
+				if(x2->p<=1e-1||m<=50)
+				{
+					flag2=0;
+					x2->p=x2->p-x2->dp;
+					N2--;
+					sump2=sump2-x2->p;
+					
+					delete x2;
+					x2=new cell2;
+				}
+				else
+				{
+				sump2=sump2+x2->dp;
+				m=m-(x2->dm);
+				constM2+=x1->dm;
+				}
+				
+			}
+			
+			if(x3->flag==1)
+			{
+				x3->p=x3->p+x3->dp;
+				
+				if(x3->p<=1e-1||n<=50)
+				{
+					flag3=0;
+					x3->p=x3->p-x3->dp;
+					N3--;
+					sump3=sump3-x3->p;
+					
+					delete x3;
+					x3=new cell3;
+				}
+				else
+				{
+				sump3=sump3+x3->dp;
+				n=n-(x3->dm);
+				m=m+(x3->dm)/10;
+				
+				constM3+=x3->dm;
+				}
+				
+			} 
+			 
+			//Empty r1r2 when there is no food and set it to - 1
+			if(m<=50||n<=50)
+			{
+				if(x1->flag==1)
+				{
+					sump1=sump1-x1->p;
+					N1--;
+					delete x1;
+					x1=new cell1;
+				}
+				if(x2->flag==1)
+				{
+					sump2=sump2-x2->p;
+					N2--;
+					delete x2;
+					x2=new cell2;
+				}
+				x1->flag=-1;
+				x2->flag=-1;
+				
+				if(x3->flag==1)
+				{
+					sump3=sump3-x3->p;
+					N3--;
+					delete x3;
+					x3=new cell3;
+				}
+				x3->flag=-1;
+				x3->flag=-1;
+			}
+			
+			if(x1->flag==1&&flag1==1)
+			{
+			x1->dm=r1/r0*(x1->p)/100;
+			x1->K=(S0-x2->p)*m/M0;
+			if(x1->K<=0)
+			{
+				x1->K=1.0;
+			}
+			x1->dp=r1/r0*x1->p*(1-(x1->p)/(x1->K));
+			}
+			
+			if(x2->flag==1&&flag2==1)
+			{
+			x2->dm=r2/r0*(x2->p)/100;
+			x2->K=(S0-x1->p-x3->p)*m/M0;
+			if(x2->K<=0)
+			{
+				x2->K=1.0;
+			}
+			x2->dp=r2/r0*x2->p*(1-(x2->p)/(x2->K));
+			}
+			
+			
+			if(x3->flag==1&&flag3==1)
+			{
+			x3->dm=r3/r0*(x3->p)/100;
+			x3->K=(S0)*n/M0;
+			if(x3->K<=0)
+			{
+				x3->K=1.0;
+			}
+			x3->dp=r3/r0*x3->p*(1-(x3->p)/(x3->K));
+			}
+			
+		}
+};
+
+
+landblock* B[1001][1001];
+const int N=10;
+
+void init()
+{
+	for(int i=0;i<=1000;i++)
+	{
+		for(int j=0;j<=1000;j++)
+		{
+			B[i][j]=new landblock(1);
+		}
+	}
+	for(int i=1;i<=N;i++)
+	{
+		for(int j=1;j<=N;j++)
+		{
+			B[i][j]=new landblock;
+		}
+	}
+	
+	B[5][5]->x1->init();
+	B[5][5]->x3->init();
+	sump1=p0;
+	sump3=p0;
+	N1=1;
+	N3=1;
+}
+
+void grow()
+{
+	for(int i=1;i<=N;i++)
+	{
+		for(int j=1;j<=N;j++)
+		{
+			B[i][j]->grow();
+		}
+	}
+}
+
+//2.Eden model and 3.random walk model
+void trans()
+{
+	if(N1!=0)
+	{
+		int y1=rand()%N1+1;
+		for(int i=1;i<=N;i++)
+		{
+			for(int j=1;j<=N;j++)
+			{
+				if(B[i][j]->x1->flag==0)continue;
+				y1--;
+				if(y1==0)
+				{
+					
+					if(B[i+1][j]->x1->flag==0)
+					{
+						B[i+1][j]->x1->init();
+						
+						N1++;
+						sump1+=p0;
+					}
+					if(B[i-1][j]->x1->flag==0)
+					{
+						B[i-1][j]->x1->init();
+						N1++;
+						sump1+=p0;
+					}
+					if(B[i][j+1]->x1->flag==0)
+					{
+						B[i][j+1]->x1->init();
+						N1++;
+						sump1+=p0;
+					}
+					if(B[i][j-1]->x1->flag==0)
+					{
+						B[i][j-1]->x1->init();
+						N1++;
+						sump1+=p0;
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	if(N2!=0)
+	{
+		int y2=rand()%N2+1;
+		for(int i=1;i<=N;i++)
+		{
+			for(int j=1;j<=N;j++)
+			{
+				if(B[i][j]->x2->flag==0)continue;
+				y2--;
+				if(y2==0)
+				{
+					if(B[i+1][j]->x2->flag==0)
+					{
+						B[i+1][j]->x2->init();
+						N2++;
+						sump2+=p0;
+					}
+					if(B[i-1][j]->x2->flag==0)
+					{
+						B[i-1][j]->x2->init();
+						N2++;
+						sump2+=p0;
+					}
+					if(B[i][j+1]->x2->flag==0)
+					{
+						B[i][j+1]->x2->init();
+						N2++;
+						sump2+=p0;
+					}
+					if(B[i][j-1]->x2->flag==0)
+					{
+						B[i][j-1]->x2->init();
+						N2++;
+						sump2+=p0;
+					}
+					break;
+				}
+			}
+		}
+	}
+	
+	if(N3!=0)
+	{
+		int y3=rand()%N3+1;
+		for(int i=1;i<=N;i++)
+		{
+			for(int j=1;j<=N;j++)
+			{
+				if(B[i][j]->x3->flag==0)continue;
+				y3--;
+				if(y3==0)
+				{
+					if(B[i+1][j]->x3->flag==0)
+					{
+						B[i+1][j]->x3->init();
+						N3++;
+						sump3+=p0;
+					}
+					if(B[i-1][j]->x3->flag==0)
+					{
+						B[i-1][j]->x3->init();
+						N3++;
+						sump3+=p0;
+					}
+					if(B[i][j+1]->x3->flag==0)
+					{
+						B[i][j+1]->x3->init();
+						N3++;
+						sump3+=p0;
+					}
+					if(B[i][j-1]->x3->flag==0)
+					{
+						B[i][j-1]->x3->init();
+						N3++;
+						sump3+=p0;
+					}
+					break;
+				}
+			}
+		}
+	}
+
+}
+
+void getsumM()
+{
+	sumM=0.0;
+	for(int i=1;i<=N;i++)
+	{
+		for(int j=1;j<=N;j++)
+		{
+			sumM+=B[i][j]->m;
+		}
+	}
+}
+
+void treegrow()
+{
+	for(int i=1;i<=N;i++)
+	{
+		for(int j=1;j<=N;j++)
+		{
+			if(B[i][j]->x1->flag!=-1)
+			{
+				B[i][j]->m+=1;
+				B[i][j]->n+=1;
+			}
+			
+		}
+	}
+}
+
+int main()
+{
+	srand(int (time(0)) );
+	
+	ofstream ofs("C:\\data1.txt");
+	
+	init();
+	for(int i=1;i<=1000;i++)
+	{
+		grow();
+		treegrow();
+		trans();
+		getsumM();
+		cout<<sump1<<"  "<<sump3<<"  "<<sumM<<"  "<<N1<<"  "<<N3<<endl;
+		ofs<<sump1<<" "<<sump3<<endl;
+		constM1=0.0;
+		constM2=0.0;
+		constM3=0.0;
+	}
+} 
