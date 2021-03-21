@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/3d">
+        <file>obj/cube.txt</file>
+        <file>obj/cup.txt</file>
+        <file>obj/wolf.txt</file>
+        <file>obj/gaoda.txt</file>
+        <file>obj/12cube.txt</file>
+        <file>obj/zhifeiji.txt</file>
+        <file>obj/tree.txt</file>
+        <file>obj/background/xingkong.jpg</file>
+        <file>obj/background/bizhi1.jpg</file>
+        <file>obj/background/bizhi2.jpg</file>
+        <file>obj/background/bizhi3.jpg</file>
+        <file>obj/background/bizhi4.jpg</file>
+        <file>obj/background/background2.jpg</file>
+        <file>obj/background/background3.jpg</file>
+    </qresource>
+</RCC>
